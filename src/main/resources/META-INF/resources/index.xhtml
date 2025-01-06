@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui">
+
+<!--
+  Página principal para el Sistema de Cuentas Bancarias.
+  Contiene un formulario para la gestión de cuentas, incluyendo creación, edición y eliminación.
+  Utiliza PrimeFaces para componentes de interfaz y diseño responsivo.
+-->
+<h:head>
+    <title>Sistema de Cuentas Bancarias</title>
+    <!-- Enlace a PrimeFlex para estilos CSS flexibles y modernos -->
+    <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css"/>
+</h:head>
+<h:body>
+    <div class="card">
+        <!-- Formulario principal para la tabla de cuentas -->
+        <h:form id="account-form">
+            <!-- Componente para mostrar mensajes de éxito o error -->
+            <p:growl id="messages" showDetail="true"/>
+
+            <div class="card">
+                <!-- Menú de navegación -->
+                <p:menubar>
+                    <p:menuitem value="Inicio" icon="pi pi-fw pi-user"
+                                update=":account-form:account-table"
+                                actionListener="#{indexController.loadData()}"/>
+                    <p:menuitem value="Nueva cuenta" icon="pi pi-fw pi-plus"
+                                actionListener="#{indexController.addAccount()}"
+                                update=":modal-form:window-account"
+                                oncomplete="PF('windowModalAccount').show()"/>
+                </p:menubar>
+            </div>
+
+            <div class="card">
+                <!-- Tabla de datos para mostrar cuentas -->
+                <p:dataTable value="#{indexController.accounts}" var="account" id="account-table" widgetVar="accountTable">
+                    <!-- Encabezado personalizado -->
+                    <f:facet name="header">
+                        <div class="flex justify-content-center flex-wrap card-containter yellow-container">
+                            <div class="flex align-items-center justify-content-center w-20rem h-4rem bg-yellow-500 font-bold
+                            text-gray-900 border-round m-2">
+                                <h3>Sistema de Cuentas Bancarias</h3>
+                            </div>
+                        </div>
+                    </f:facet>
+
+                    <!-- Columnas de la tabla -->
+                    <p:column headerText="ID Cuenta">
+                        <h:outputText value="#{account.accountId}"/>
+                    </p:column>
+
+                    <p:column headerText="Nombre">
+                        <h:outputText value="#{account.name}"/>
+                    </p:column>
+
+                    <p:column headerText="Tipo de Cuenta">
+                        <h:outputText value="#{account.accountType}"/>
+                    </p:column>
+
+                    <p:column headerText="Saldo">
+                        <h:outputText value="#{account.balance}">
+                            <f:convertNumber type="currency" currencySymbol="$"/>
+                        </h:outputText>
+                    </p:column>
+
+                    <!-- Botón para editar cuentas -->
+                    <p:column>
+                        <p:commandButton value="Editar" icon="pi pi-pencil"
+                                         update=":modal-form:window-account"
+                                         oncomplete="PF('windowModalAccount').show()"
+                                         process="@this"
+                                         class="ui-button-primary"
+                                         style="margin-right: .5rem">
+                            <f:setPropertyActionListener value="#{account}" target="#{indexController.selectedAccount}"/>
+                            <p:resetInput target=":modal-form:window-account"/>
+                        </p:commandButton>
+                    </p:column>
+
+                    <!-- Botón para eliminar cuentas -->
+                    <p:column>
+                        <p:commandButton value="Eliminar" icon="pi pi-trash"
+                                         class="ui-button-danger"
+                                         process="@this"
+                                         oncomplete="PF('removeWindowAccount').show()">
+                            <f:setPropertyActionListener value="#{account}" target="#{indexController.selectedAccount}"/>
+                        </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+            </div>
+        </h:form>
+
+        <!-- Formulario modal para agregar/editar cuentas -->
+        <h:form id="modal-form">
+            <p:dialog header="Detalles Cuenta" showEffect="fade"
+                      modal="true" widgetVar="windowModalAccount"
+                      responsive="true">
+                <p:outputPanel id="window-account" class="ui-fluid">
+                    <!-- Campos de formulario -->
+                    <div class="field">
+                        <p:outputLabel for="name">Nombre</p:outputLabel>
+                        <p:inputText id="name"
+                                     value="#{indexController.selectedAccount.name}"
+                                     required="true"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="typeAccount">Tipo de Cuenta</p:outputLabel>
+                        <p:selectOneMenu id="typeAccount"
+                                         value="#{indexController.selectedAccount.accountType}">
+                            <f:selectItem itemLabel="Selecciona" itemValue=""/>
+                            <f:selectItem itemLabel="Ahorro" itemValue="Ahorro"/>
+                            <f:selectItem itemLabel="Credito" itemValue="Credito"/>
+                            <f:selectItem itemLabel="Inversion" itemValue="Inversion"/>
+                        </p:selectOneMenu>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="balance">Saldo</p:outputLabel>
+                        <p:inputNumber id="balance"
+                                       value="#{indexController.selectedAccount.balance}"/>
+                    </div>
+                </p:outputPanel>
+
+                <!-- Botones para guardar o cancelar -->
+                <f:facet name="footer">
+                    <p:commandButton value="Guardar" icon="pi pi-check"
+                                     actionListener="#{indexController.saveAccount}"
+                                     process="window-account @this"/>
+                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                     onclick="PF('windowModalAccount').hide()"
+                                     class="ui-button-secondary" type="button"/>
+                </f:facet>
+            </p:dialog>
+
+            <!-- Diálogo de confirmación para eliminar cuentas -->
+            <p:confirmDialog widgetVar="removeWindowAccount"
+                             showEffect="fade"
+                             width="300"
+                             message="Deseas eliminar la cuenta?"
+                             header="Confirmar"
+                             severity="warn">
+                <p:commandButton value="Si" icon="pi pi-check"
+                                 actionListener="#{indexController.deleteAccount}"
+                                 process="@this"
+                                 oncomplete="PF('removeWindowAccount').hide()"/>
+                <p:commandButton value="No" type="button"
+                                 styleClass="ui-button-secondary"
+                                 icon="pi pi-times"
+                                 onclick="PF('removeWindowAccount').hide()"/>
+            </p:confirmDialog>
+        </h:form>
+    </div>
+</h:body>
+</html>
